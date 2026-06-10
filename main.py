@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (
     QPushButton, QLabel, QLineEdit, QSpinBox, QComboBox,
     QListWidget, QListWidgetItem, QMessageBox, QTabWidget
 )
+from PyQt5.QtGui import QIcon 
 
 CSV_FILE = "books.csv"
 CATEGORIES = ["tbr", "current", "completed"]
@@ -40,6 +41,9 @@ class BookApp(QMainWindow):
         super().__init__()
         self.setWindowTitle("Book List")
         self.setMinimumSize(600, 500)
+        self.setStyleSheet("color:#4a024f;"
+                           "background-color:#ffd9f6;")
+        self.setWindowIcon(QIcon("kalego.jpg"))
         self.books = load_books()
 
         # Central widget + main layout
@@ -100,6 +104,17 @@ class BookApp(QMainWindow):
         btn_row.addWidget(move_btn)
 
         self.move_target = QComboBox()
+        self.move_target.setStyleSheet("""
+            QListWidget::item {
+                background-color:#ffd9f6;
+                color:#4a024f;
+                padding: 5px;
+            }
+            QListWidget::item:selected {
+                background-color:#ffd9f6;
+                color:#4a024f;
+            }
+        """)
         for key in CATEGORIES:
             self.move_target.addItem(CATEGORY_NAMES[key], key)
         btn_row.addWidget(self.move_target)
@@ -160,6 +175,7 @@ class BookApp(QMainWindow):
         self.title_input.clear()
         self.author_input.clear()
         self.priority_spin.setValue(3)
+        self.save()
 
     def delete_book(self):
         lw = self.current_list_widget()
@@ -177,6 +193,7 @@ class BookApp(QMainWindow):
         if reply == QMessageBox.Yes:
             self.books.remove(book)
             self.refresh_all_tabs()
+            self.save()
 
     def move_book(self):
         lw = self.current_list_widget()
@@ -188,8 +205,15 @@ class BookApp(QMainWindow):
         book = item.data(1000)
         new_cat = self.move_target.currentData()
         book["category"] = new_cat
+         # Find the matching book in self.books and update it directly
+        for b in self.books:
+            if b["title"] == book["title"] and b["author"] == book["author"] and b["date_added"] == book["date_added"]:
+                b["category"] = new_cat
+                break
+ 
         self.refresh_all_tabs()
         self.tabs.setCurrentIndex(CATEGORIES.index(new_cat))
+        self.save()
 
     def save(self):
         save_books(self.books)
